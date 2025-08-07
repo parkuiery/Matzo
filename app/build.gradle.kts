@@ -2,6 +2,10 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    id("com.google.devtools.ksp")
+    id("androidx.room")
+    id("com.google.dagger.hilt.android")
 }
 
 android {
@@ -37,6 +41,10 @@ android {
     buildFeatures {
         compose = true
     }
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 }
 
 dependencies {
@@ -56,4 +64,22 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation(libs.kotlinx.serialization.json)
+    implementation("com.airbnb.android:lottie-compose:6.6.6")
+    implementation("androidx.room:room-runtime:2.7.1")
+    ksp("androidx.room:room-compiler:2.7.1")
+
+    implementation("com.google.dagger:hilt-android:2.56.1")
+    ksp("com.google.dagger:hilt-android-compiler:2.56.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+
+    implementation("org.orbit-mvi:orbit-core:9.0.0")
+    implementation("org.orbit-mvi:orbit-viewmodel:9.0.0")
+    implementation("org.orbit-mvi:orbit-compose:9.0.0")
+
+    implementation("com.blankj:utilcodex:1.31.1")
+
+    implementation("com.google.code.gson:gson:2.13.1")
 }

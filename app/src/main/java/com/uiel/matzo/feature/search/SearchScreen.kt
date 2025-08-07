@@ -1,8 +1,11 @@
 package com.uiel.matzo.feature.search
 
+import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,7 +16,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -22,61 +27,100 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.uiel.matzo.MatzoTopAppBar
+import com.uiel.matzo.feature.search.component.UserItemButton
+import com.uiel.matzo.ui.theme.Gray0
+import com.uiel.matzo.ui.theme.Gray20
+import com.uiel.matzo.ui.theme.Gray30
+import com.uiel.matzo.ui.theme.Gray40
+import com.uiel.matzo.ui.theme.Gray50
+import com.uiel.matzo.ui.theme.Gray70
+import com.uiel.matzo.ui.theme.Gray90
+import com.uiel.matzo.ui.theme.pretendard
+import com.uiel.matzo.util.formatKoreanDate
+import com.uiel.matzo.util.toIcon
+import org.orbitmvi.orbit.compose.collectAsState
+import org.orbitmvi.orbit.compose.collectSideEffect
+import java.time.LocalDate
 
 @Composable
 fun SearchScreen(
     modifier: Modifier = Modifier,
+    viewModel: SearchViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
-    onNavigateToCheck: () -> Unit,
+    onNavigateToCheck: (String, Boolean) -> Unit,
 ) {
+    val state by viewModel.collectAsState()
+
+    viewModel.collectSideEffect {
+        when (it) {
+            is SearchSideEffect.ApplicationSuccess -> onNavigateToCheck(it.name, true)
+            SearchSideEffect.ApplicationFail -> onNavigateToCheck("", false)
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             MatzoTopAppBar(
                 modifier = Modifier.fillMaxWidth(),
                 title = "이름 검색",
+                content = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Text(
+                            text = formatKoreanDate(LocalDate.now()),
+                            style = TextStyle(
+                                fontFamily = pretendard,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 26.sp,
+                            ),
+                            color = Color(0xFF9944EF),
+                        )
+                        Image(
+                            painter = painterResource(state.mealType.toIcon()),
+                            contentDescription = null,
+                        )
+                    }
+                },
                 onBackClick = onBackClick,
             )
         },
-        containerColor = Color.DarkGray,
+        containerColor = Color(0xFFF7F7F7),
     ) { paddingValues ->
-        Row (
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(
-                    horizontal = 48.dp,
-                    vertical = 24.dp,
+                    horizontal = 36.dp,
+                    vertical = 20.dp,
                 )
-                .background(Color.Gray)
-                .padding(12.dp),
+                .background(color = Color.White, shape = RoundedCornerShape(28.dp))
+                .padding(horizontal = 34.dp, vertical = 26.dp),
         ) {
-            val names = listOf(
-                "김철수", "박영희", "이민수", "최다은", "정하늘",
-                "한지우", "오예진", "윤도윤", "장하은", "임수현",
-                "강민준", "조예슬", "서연우", "신하림", "권채은",
-                "황준영", "안나현", "송태훈", "류성민", "홍은지",
-                "이현우", "박지민", "김하윤", "최서윤", "정도현",
-                "한예림", "오지훈", "윤슬기", "장태현", "임은채",
-                "강도현", "조하진", "서민재", "신유정", "권지후",
-                "황하율", "안예준", "송민하", "류도현", "홍예빈",
-                "김윤서", "박준호", "이슬아", "최하민", "정세린",
-                "한지훈", "오채연", "윤하늘", "장유리", "임시우"
-            )
-            val initials = listOf("ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ")
+            val initials =
+                listOf("ㄱ", "ㄴ", "ㄷ", "ㄹ", "ㅁ", "ㅂ", "ㅅ", "ㅇ", "ㅈ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ")
             var selectedInitial by remember { mutableStateOf<String?>(null) }
 
-            val filteredNames = remember(selectedInitial) {
+            val filteredUsers = remember(selectedInitial, state.users) {
                 if (selectedInitial == null) {
-                    names
+                    state.users
                 } else {
-                    names.filter { getInitial(it) == selectedInitial }
+                    state.users.filter { getInitial(it.name) == selectedInitial }
                 }
             }
 
@@ -85,11 +129,25 @@ fun SearchScreen(
                 columns = GridCells.Fixed(4),
             ) {
                 items(initials) { initial ->
+                    val (buttonColor, textColor) = if (selectedInitial == initial) Color(0xFF9944EF) to
+                            Color.White else Color(0xFF9944EF).copy(alpha = 0.08f) to Color.Black
                     Button(
                         onClick = { selectedInitial = initial },
-                        modifier = Modifier.padding(4.dp)
+                        modifier = Modifier.padding(4.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = buttonColor,
+                        )
                     ) {
-                        Text(initial)
+                        Text(
+                            text = initial,
+                            style = TextStyle(
+                                fontFamily = pretendard,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 20.sp,
+                            ),
+                            color = textColor,
+                        )
                     }
                 }
             }
@@ -103,17 +161,34 @@ fun SearchScreen(
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(filteredNames) { name ->
-                    Text(
-                        modifier = Modifier
-                            .clickable { onNavigateToCheck() }
-                            .background(Color.White)
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        text = name,
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center,
+                items(filteredUsers) { user ->
+                    UserItemButton(
+                        name = user.name,
+                        department = user.departmentName,
+                        onClick = { viewModel.application(user) }
                     )
+//                    Column(
+//                        modifier = Modifier
+//                            .clip(RoundedCornerShape(8.dp))
+//                            .clickable { viewModel.application(user) }
+//                            .background(color = Gray20, shape = RoundedCornerShape(8.dp))
+//                            .padding(horizontal = 12.dp, vertical = 8.dp),
+//                        horizontalAlignment = Alignment.CenterHorizontally,
+//                        verticalArrangement = Arrangement.Center,
+//                    ) {
+//                        Text(
+//                            text = user.name,
+//                            style = MaterialTheme.typography.headlineLarge,
+//                            fontWeight = FontWeight.SemiBold,
+//                            textAlign = TextAlign.Center,
+//                            color = Gray90,
+//                        )
+//                        Text(
+//                            text = user.departmentName,
+//                            color = Gray70,
+//                            fontWeight = FontWeight.SemiBold,
+//                        )
+//                    }
                 }
             }
         }
